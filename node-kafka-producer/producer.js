@@ -1,13 +1,14 @@
-const { Kafka } = require('kafkajs');
-const readline = require('readline');
+import { Producer, stringSerializers } from '@platformatic/kafka'
+import readline from 'readline'
 
-// Kafka setup
-const kafka = new Kafka({
-  clientId: 'cli-producer',
-  brokers: ['localhost:9092'] // Update if your broker is remote
-});
+//const readline = require('readline');
 
-const producer = kafka.producer();
+// Producer setup
+const producer = new Producer({
+  clientId: 'my-producer',
+  bootstrapBrokers: ['localhost:9092'],
+  serializers: stringSerializers
+})
 
 // Readline setup
 const rl = readline.createInterface({
@@ -15,10 +16,16 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
+const run = async () => {
+  //await producer.connect();
+  console.log('Kafka producer connected.');
+  promptMessage();
+};
+
 const promptMessage = () => {
   rl.question('Enter message (type "exit" to quit): ', async (input) => {
     if (input.toLowerCase() === 'exit') {
-      await producer.disconnect();
+      await producer.close();
       rl.close();
       console.log('Producer disconnected. Goodbye!');
       return;
@@ -26,8 +33,16 @@ const promptMessage = () => {
 
     try {
       await producer.send({
-        topic: 'my-topic',
-        messages: [{ value: input }],
+        messages: [
+          {
+            topic: 'my-topic',
+            key: 'node-kafka-producer',
+            value: JSON.stringify({ value: input }),
+            headers: { source: 'web-app' }
+          }
+        ]
+        //        topic: 'my-topic',
+        //        value: [{ value: input }],
       });
       console.log(`✅ Sent: "${input}"`);
     } catch (err) {
@@ -36,12 +51,6 @@ const promptMessage = () => {
 
     promptMessage(); // Prompt again
   });
-};
-
-const run = async () => {
-  await producer.connect();
-  console.log('Kafka producer connected.');
-  promptMessage();
 };
 
 run().catch(e => {

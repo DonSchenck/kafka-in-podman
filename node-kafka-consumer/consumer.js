@@ -1,27 +1,28 @@
-const { Kafka } = require('kafkajs');
+import { Consumer, MessagesStreamFallbackModes, MessagesStreamModes, stringDeserializers } from '@platformatic/kafka'
+import { forEach } from 'hwp'
 
-// Kafka setup
-const kafka = new Kafka({
-  clientId: 'cli-consumer',
-  brokers: ['localhost:9092'] // Update if your broker is remote
-});
+// Create a consumer with string deserialisers
+const consumer = new Consumer({
+  groupId: 'my-consumer-group',
+  clientId: 'my-consumer',
+  bootstrapBrokers: ['localhost:9092'],
+  deserializers: stringDeserializers
+})
 
-const consumer = kafka.consumer({ groupId: 'cli-group' });
+// Create a consumer stream
+const stream = await consumer.consume({
+  autocommit: true,
+  topics: ['my-topic'],
+  sessionTimeout: 10000,
+  heartbeatInterval: 500,
+  fallbackMode: MessagesStreamFallbackModes.EARLIEST,
+  mode: MessagesStreamModes.COMMITTED
+})
 
-const run = async () => {
-  await consumer.connect();
-  await consumer.subscribe({ topic: 'my-topic', fromBeginning: true });
+for await (const message of stream) {
+  console.log(`Received [Async iterator consumption]: ${message.key} -> ${message.value}`)
+  // Process message...
+}
 
-  console.log('Listening for messages on "my-topic"...');
-
-  await consumer.run({
-    eachMessage: async ({ topic, partition, message }) => {
-      console.log(`📥 Received message: ${message.value.toString()}`);
-    },
-  });
-};
-
-run().catch(e => {
-  console.error(`[Kafka Error] ${e.message}`, e);
-  process.exit(1);
-});
+// Close the consumer when done
+await consumer.close()

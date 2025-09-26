@@ -5,7 +5,7 @@ import { forEach } from 'hwp'
 const consumer = new Consumer({
   groupId: 'my-consumer-group',
   clientId: 'my-consumer',
-  bootstrapBrokers: ['localhost:9092'],
+  bootstrapBrokers: ['kafkaserver:9092'],
   deserializers: stringDeserializers
 })
 

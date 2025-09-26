@@ -6,8 +6,10 @@ import readline from 'readline'
 // Producer setup
 const producer = new Producer({
   clientId: 'my-producer',
-  bootstrapBrokers: ['localhost:9092'],
-  serializers: stringSerializers
+//  bootstrapBrokers: ['localhost:9092'],
+  bootstrapBrokers: ['kafkaserver:9092'],
+  serializers: stringSerializers,
+  autocreateTopics: true
 })
 
 // Readline setup
@@ -41,8 +43,6 @@ const promptMessage = () => {
             headers: { source: 'web-app' }
           }
         ]
-        //        topic: 'my-topic',
-        //        value: [{ value: input }],
       });
       console.log(`✅ Sent: "${input}"`);
     } catch (err) {
